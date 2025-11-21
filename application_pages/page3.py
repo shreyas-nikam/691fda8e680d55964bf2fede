@@ -11,6 +11,7 @@ import plotly.graph_objects as go
 # For this task, they were provided in the prompt for page2, so we can re-define them here or import from page2.
 # Given the prompt, I will assume the functions `stress_scenario_volatility` and `stress_scenario_add_noise` are available.
 
+
 def stress_scenario_volatility(X_data, factor, vol_cols):
     """
     Applies a volatility shock to specified columns of a Pandas DataFrame.
@@ -28,10 +29,12 @@ def stress_scenario_volatility(X_data, factor, vol_cols):
         target_cols = vol_cols
     if len(target_cols) > 0:
         # Ensure columns exist before attempting to modify
-        valid_target_cols = [col for col in target_cols if col in stressed_df.columns]
+        valid_target_cols = [
+            col for col in target_cols if col in stressed_df.columns]
         if valid_target_cols:
             stressed_df[valid_target_cols] = stressed_df[valid_target_cols] * factor
     return stressed_df
+
 
 def stress_scenario_add_noise(X_data, noise_std_dev, vol_cols):
     """    This function introduces random Gaussian noise to specified columns of a Pandas DataFrame, simulating unpredictable measurement errors or market fluctuations. It creates a deep copy of the input DataFrame to avoid modifying the original data, preserving the original test set for baseline comparisons.
@@ -48,11 +51,14 @@ Pandas DataFrame, the DataFrame with specified columns having added random Gauss
     else:
         target_cols = vol_cols
     if len(target_cols) > 0:
-        valid_target_cols = [col for col in target_cols if col in X_stressed.columns]
+        valid_target_cols = [
+            col for col in target_cols if col in X_stressed.columns]
         for col in valid_target_cols:
-            noise = np.random.normal(loc=0, scale=noise_std_dev, size=len(X_stressed))
+            noise = np.random.normal(
+                loc=0, scale=noise_std_dev, size=len(X_stressed))
             X_stressed[col] = X_stressed[col] + noise
     return X_stressed
+
 
 def run_page3():
     st.title("Execution & Results")
@@ -67,7 +73,8 @@ def run_page3():
     y_hat_base = st.session_state.y_hat_base
     scenarios_dict = st.session_state.scenarios
 
-    st.markdown("## 10. Executing Stress Scenarios and Generating Stressed Predictions")
+    st.markdown(
+        "## 10. Executing Stress Scenarios and Generating Stressed Predictions")
     st.markdown("""
     With our scenarios defined, we now execute each one. For every scenario, we apply the stress transformation to a copy of `X_test` and then generate new predictions using our pre-trained model. These stressed predictions will then be compared to our baseline.
     """)
@@ -90,9 +97,10 @@ def run_page3():
 
     if st.button("Run Robustness Test"):
         with st.spinner("Running scenarios and generating predictions..."):
-            st.session_state.stressed_predictions = execute_scenarios(model, X_test, scenarios_dict)
+            st.session_state.stressed_predictions = execute_scenarios(
+                model, X_test, scenarios_dict)
         st.success("Robustness test completed!")
-        st.experimental_rerun() # Rerun to display results immediately
+        st.rerun()  # Rerun to display results immediately
 
     stressed_predictions = st.session_state.get('stressed_predictions', {})
 
@@ -116,24 +124,22 @@ def run_page3():
         mean_stressed = stressed_predictions.mean()
         return float(mean_stressed - mean_baseline)
 
-    st.code("""
-def calculate_mean_shift(baseline_predictions, stressed_predictions):
-    \`\`\`
-    Calculates the quantitative difference between the mean of stressed predictions
-    and the mean of baseline predictions.
-    Arguments:
-    baseline_predictions: NumPy array or Pandas Series, the model's predictions on
-                          the original, unstressed test dataset.
-    stressed_predictions: NumPy array or Pandas Series, the model's predictions on
-                          the test dataset after applying a specific stress transformation.
-    Output:
-    float, a scalar value representing the difference between the mean of stressed
-    predictions and baseline predictions.
-    \`\`\`
-    mean_baseline = baseline_predictions.mean()
-    mean_stressed = stressed_predictions.mean()
-    return float(mean_stressed - mean_baseline)
-""").replace("```", "\`\`\`"))
+    def calculate_mean_shift(baseline_predictions, stressed_predictions):
+        """
+        Calculates the quantitative difference between the mean of stressed predictions
+        and the mean of baseline predictions.
+        Arguments:
+        baseline_predictions: NumPy array or Pandas Series, the model's predictions on
+                            the original, unstressed test dataset.
+        stressed_predictions: NumPy array or Pandas Series, the model's predictions on
+                            the test dataset after applying a specific stress transformation.
+        Output:
+        float, a scalar value representing the difference between the mean of stressed
+        predictions and baseline predictions.
+        """
+        mean_baseline = baseline_predictions.mean()
+        mean_stressed = stressed_predictions.mean()
+        return float(mean_stressed - mean_baseline)
 
     if 'stressed_predictions' in st.session_state and stressed_predictions and 'mean_shifts' not in st.session_state:
         mean_shifts = {}
@@ -162,22 +168,23 @@ def calculate_mean_shift(baseline_predictions, stressed_predictions):
                 'Predictions': np.concatenate([y_hat_base, y_hat_stress]),
                 'Type': ['Baseline'] * len(y_hat_base) + [name] * len(y_hat_stress)
             })
-            
+
             fig_dist = px.histogram(df_plot, x="Predictions", color="Type", histnorm='density',
                                     title=f"Prediction Distribution: Baseline vs. {name}",
-                                    color_discrete_map={'Baseline': 'blue', name: 'red'},
+                                    color_discrete_map={
+                                        'Baseline': 'blue', name: 'red'},
                                     barmode='overlay', opacity=0.6)
             fig_dist.update_layout(bargap=0.1)
-            
+
             shift = mean_shifts.get(name, 0.0)
-            fig_dist.add_annotation(dict(font=dict(color="black",size=12),
-                                            x=0.05, y=0.9,
-                                            showarrow=False,
-                                            text=f'Mean Shift: {shift:.2f}',
-                                            textangle=0,
-                                            xanchor='left', xref="paper",
-                                            yanchor='top', yref="paper"))
-            
+            fig_dist.add_annotation(dict(font=dict(color="black", size=12),
+                                         x=0.05, y=0.9,
+                                         showarrow=False,
+                                         text=f'Mean Shift: {shift:.2f}',
+                                         textangle=0,
+                                         xanchor='left', xref="paper",
+                                         yanchor='top', yref="paper"))
+
             st.plotly_chart(fig_dist)
 
     st.markdown("""
@@ -202,7 +209,7 @@ def calculate_mean_shift(baseline_predictions, stressed_predictions):
     st.markdown("""
     This bar chart offers a clear, at-a-glance summary of how each stress scenario affected the average model prediction. Scenarios with larger absolute mean shifts indicate areas where the model's stability is more significantly compromised.
     """)
-    
+
     st.markdown("## 15. Rerunning Analysis with Custom Scenarios")
     st.markdown("""
     To see the impact of our newly defined custom stress scenario, we will re-execute the prediction and analysis steps, incorporating the 'noise_shock'. This iterative process is crucial for thoroughly evaluating model robustness under diverse conditions.

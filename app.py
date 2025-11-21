@@ -20,9 +20,10 @@ Upon completion of using this application, users will be able to:
 Given a model $\hat{y} = f_\theta(x)$, we wish to evaluate its stability under stress transformations $T_s$ applied to inputs (e.g., volatility shocks). For each scenario $s$:
 $$x^{(s)} = T_s(x), \quad \hat{y}^{(s)} = f_\theta(x^{(s)}).$$
 We compare distributions of $\hat{y}^{(s)}$ to baseline predictions.
-""").replace("```", "\`\`\`"))
+""")
 # Your code starts here
-page = st.sidebar.selectbox(label="Navigation", options=["Application Overview & Setup", "Scenario Definition & Baseline Analysis", "Execution & Results"])
+page = st.sidebar.selectbox(label="Navigation", options=[
+                            "Application Overview & Setup", "Scenario Definition & Baseline Analysis", "Execution & Results"])
 if page == "Application Overview & Setup":
     from application_pages.page1 import run_page1
     run_page1()

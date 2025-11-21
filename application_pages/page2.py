@@ -6,6 +6,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 # Define the stress transformation functions
+
+
 def stress_scenario_volatility(X_data, factor, vol_cols):
     """
     Applies a volatility shock to specified columns of a Pandas DataFrame.
@@ -23,10 +25,12 @@ def stress_scenario_volatility(X_data, factor, vol_cols):
         target_cols = vol_cols
     if len(target_cols) > 0:
         # Ensure columns exist before attempting to modify
-        valid_target_cols = [col for col in target_cols if col in stressed_df.columns]
+        valid_target_cols = [
+            col for col in target_cols if col in stressed_df.columns]
         if valid_target_cols:
             stressed_df[valid_target_cols] = stressed_df[valid_target_cols] * factor
     return stressed_df
+
 
 def stress_scenario_add_noise(X_data, noise_std_dev, vol_cols):
     """    This function introduces random Gaussian noise to specified columns of a Pandas DataFrame, simulating unpredictable measurement errors or market fluctuations. It creates a deep copy of the input DataFrame to avoid modifying the original data, preserving the original test set for baseline comparisons.
@@ -43,18 +47,22 @@ Pandas DataFrame, the DataFrame with specified columns having added random Gauss
     else:
         target_cols = vol_cols
     if len(target_cols) > 0:
-        valid_target_cols = [col for col in target_cols if col in X_stressed.columns]
+        valid_target_cols = [
+            col for col in target_cols if col in X_stressed.columns]
         for col in valid_target_cols:
-            noise = np.random.normal(loc=0, scale=noise_std_dev, size=len(X_stressed))
+            noise = np.random.normal(
+                loc=0, scale=noise_std_dev, size=len(X_stressed))
             X_stressed[col] = X_stressed[col] + noise
     return X_stressed
+
 
 def run_page2():
     st.title("Scenario Definition & Baseline Analysis")
 
     # Ensure necessary session_state variables are initialized from page1
     if 'X_test' not in st.session_state or 'model' not in st.session_state or 'y_train' not in st.session_state:
-        st.warning("Please navigate to 'Application Overview & Setup' first to load data and train the model.")
+        st.warning(
+            "Please navigate to 'Application Overview & Setup' first to load data and train the model.")
         return
 
     X_test = st.session_state.X_test
@@ -87,77 +95,89 @@ def run_page2():
     fig_base = px.histogram(pd.Series(y_hat_base), nbins=50, title="Distribution of Baseline Predictions",
                             labels={"value": "Predicted Value", "count": "Density"}, histnorm='density')
     fig_base.update_traces(marker_color='blue', opacity=0.6)
-    fig_base.update_layout(bargap=0.1) # Add some gap for better visualization if desired
+    # Add some gap for better visualization if desired
+    fig_base.update_layout(bargap=0.1)
     st.plotly_chart(fig_base)
 
     st.markdown("""
     This plot shows the probability density of our model's predictions on the unstressed test data. Its shape (e.g., unimodal, bimodal, skewed) provides initial insights into the model's output characteristics.
     """)
 
-    st.markdown("## 8. Implementing the Stress Transformation Function (`stress_scenario_volatility`)")
+    st.markdown(
+        "## 8. Implementing the Stress Transformation Function (`stress_scenario_volatility`)")
     st.markdown("""
     The core of our robustness test is the ability to transform input features to simulate stress. We'll implement a versatile function, `stress_scenario_volatility`, that allows us to multiply specified columns by a chosen factor. This simulates 'volatility shocks' such as sudden economic upturns or downturns.
     """)
 
-    st.code("""
-def stress_scenario_volatility(X_data, factor, vol_cols):
-    \`\`\`
-    Applies a volatility shock to specified columns of a Pandas DataFrame.
-    Arguments:
-    X_data: Pandas DataFrame, the input features to be stressed.
-    factor: float, the multiplicative factor.
-    vol_cols: list of strings, names of columns to stress. If None, all numerical columns.
-    Output:
-    Pandas DataFrame, with specified columns modified by the factor.
-    \`\`\`
-    stressed_df = X_data.copy(deep=True)
-    if vol_cols is None:
-        target_cols = stressed_df.select_dtypes(include=np.number).columns
-    else:
-        target_cols = vol_cols
-    if len(target_cols) > 0:
-        valid_target_cols = [col for col in target_cols if col in stressed_df.columns]
-        if valid_target_cols:
-            stressed_df[valid_target_cols] = stressed_df[valid_target_cols] * factor
-    return stressed_df
-""").replace("```", "\`\`\`"))
+    def stress_scenario_volatility(X_data, factor, vol_cols):
+        """
+        Applies a volatility shock to specified columns of a Pandas DataFrame.
+        Arguments:
+        X_data: Pandas DataFrame, the input features to be stressed.
+        factor: float, the multiplicative factor.
+        vol_cols: list of strings, names of columns to stress. If None, all numerical columns.
+        Output:
+        Pandas DataFrame, with specified columns modified by the factor.
+        """
+        stressed_df = X_data.copy(deep=True)
+        if vol_cols is None:
+            target_cols = stressed_df.select_dtypes(include=np.number).columns
+        else:
+            target_cols = vol_cols
+        if len(target_cols) > 0:
+            valid_target_cols = [
+                col for col in target_cols if col in stressed_df.columns]
+            if valid_target_cols:
+                stressed_df[valid_target_cols] = stressed_df[valid_target_cols] * factor
+        return stressed_df
 
     st.markdown("""
     The `stress_scenario_volatility` function is designed to be flexible. By changing the `factor`, we can simulate both increases (e.g., `factor=2.0` for a 100% increase) and decreases (e.g., `factor=0.5` for a 50% decrease) in the 'volatility columns'. This function will be the building block for defining our stress scenarios.
     """)
+
+    factor = st.number_input(
+        "Example: Enter a factor to test the stress function (e.g., 2.0 for doubling):", value=1.5, step=0.1)
+    stressed_example = stress_scenario_volatility(
+        X_test, factor=factor, vol_cols=vol_cols)
+    st.write(f"First 5 rows of stressed data with factor {factor}:")
+    st.dataframe(stressed_example.head())
 
     st.markdown("## 14. Customizing Stress Scenarios (Advanced)")
     st.markdown("""
     The flexibility of this framework allows for defining various types of stress beyond simple multiplicative factors. Users can implement custom functions to simulate more complex real-world phenomena, such as adding random noise, applying thresholds, or simulating specific market event impacts.
     """)
 
-    st.code("""
-def stress_scenario_add_noise(X_data, noise_std_dev, vol_cols):
-    \`\`\`    This function introduces random Gaussian noise to specified columns of a Pandas DataFrame, simulating unpredictable measurement errors or market fluctuations. It creates a deep copy of the input DataFrame to avoid modifying the original data, preserving the original test set for baseline comparisons.
-Arguments:
-X_data: Pandas DataFrame, the input features to be stressed.
-noise_std_dev: float, the standard deviation of the Gaussian noise to add (mean is 0).
-vol_cols: list of strings, the names of the columns to add noise to. If None, noise is added to all numerical columns in the DataFrame.
-Output:
-Pandas DataFrame, the DataFrame with specified columns having added random Gaussian noise.
-    \`\`\`
-    X_stressed = X_data.copy(deep=True)
-    if vol_cols is None:
-        target_cols = X_stressed.select_dtypes(include=np.number).columns
-    else:
-        target_cols = vol_cols
-    if len(target_cols) > 0:
-        valid_target_cols = [col for col in target_cols if col in X_stressed.columns]
-        for col in valid_target_cols:
-            noise = np.random.normal(loc=0, scale=noise_std_dev, size=len(X_stressed))
-            X_stressed[col] = X_stressed[col] + noise
-    return X_stressed
-""").replace("```", "\`\`\`"))
+    def stress_scenario_add_noise(X_data, noise_std_dev, vol_cols):
+        """
+        This function introduces random Gaussian noise to specified columns of a Pandas DataFrame, simulating unpredictable measurement errors or market fluctuations. It creates a deep copy of the input DataFrame to avoid modifying the original data, preserving the original test set for baseline comparisons.
+        Arguments:
+        X_data: Pandas DataFrame, the input features to be stressed.
+        noise_std_dev: float, the standard deviation of the Gaussian noise to add (mean is 0).
+        vol_cols: list of strings, the names of the columns to add noise to. If None, noise is added to all numerical columns in the DataFrame.
+        Output:
+        Pandas DataFrame, the DataFrame with specified columns having added random Gaussian noise.
+        """
+        X_stressed = X_data.copy(deep=True)
+        if vol_cols is None:
+            target_cols = X_stressed.select_dtypes(include=np.number).columns
+        else:
+            target_cols = vol_cols
+        if len(target_cols) > 0:
+            valid_target_cols = [
+                col for col in target_cols if col in X_stressed.columns]
+            for col in valid_target_cols:
+                noise = np.random.normal(
+                    loc=0, scale=noise_std_dev, size=len(X_stressed))
+                X_stressed[col] = X_stressed[col] + noise
+        return X_stressed
 
     st.markdown("""
     The `stress_scenario_add_noise` function introduces random Gaussian noise to specified features, simulating unpredictable measurement errors or market fluctuations. By adding this new scenario, we demonstrate how easily the robustness test framework can be extended to cover a wider range of potential stressors.
     """)
-
+    noise_std_dev = st.number_input(
+        "Example: Enter a standard deviation for noise to test the stress function (e.g., 0.5):", value=0.5, step=0.1)
+    stressed_noise_example = stress_scenario_add_noise(
+        X_test, noise_std_dev=noise_std_dev, vol_cols=vol_cols)
 
     st.markdown("## 9. Defining Stress Scenarios")
     st.markdown("""
@@ -174,34 +194,42 @@ Pandas DataFrame, the DataFrame with specified columns having added random Gauss
 
     st.subheader("Current Active Scenarios:")
     if st.session_state.scenarios:
-        st.write(pd.DataFrame.from_dict(st.session_state.scenarios, orient='index').to_markdown())
+        st.write(pd.DataFrame.from_dict(
+            st.session_state.scenarios, orient='index').to_markdown())
     else:
         st.info("No scenarios defined yet. Use the sidebar to add custom scenarios.")
-
 
     # Sidebar for adding custom scenarios
     with st.sidebar.expander("Define Custom Stress Scenario"):
         st.markdown("### Add New Scenario")
-        scenario_type = st.selectbox("Select Stress Type", ["Volatility Multiplier", "Add Gaussian Noise"])
-        
-        new_vol_cols = st.multiselect("Columns to Stress", X_test.columns.tolist(), default=vol_cols)
-        new_scenario_name = st.text_input("New Scenario Name", value=f"{scenario_type.replace(' ', '_').lower()}_{len(st.session_state.scenarios)+1}")
-        
+        scenario_type = st.selectbox("Select Stress Type", [
+                                     "Volatility Multiplier", "Add Gaussian Noise"])
+
+        new_vol_cols = st.multiselect(
+            "Columns to Stress", X_test.columns.tolist(), default=vol_cols)
+        new_scenario_name = st.text_input(
+            "New Scenario Name", value=f"{scenario_type.replace(' ', '_').lower()}_{len(st.session_state.scenarios)+1}")
+
         new_scenario_params = {}
         new_scenario_func_name = ''
 
         if scenario_type == "Volatility Multiplier":
-            new_factor = st.number_input("Multiplicative Factor", min_value=0.01, max_value=10.0, value=1.5, step=0.1)
-            new_scenario_params = {'factor': new_factor, 'vol_cols': new_vol_cols}
+            new_factor = st.number_input(
+                "Multiplicative Factor", min_value=0.01, max_value=10.0, value=1.5, step=0.1)
+            new_scenario_params = {
+                'factor': new_factor, 'vol_cols': new_vol_cols}
             new_scenario_func_name = 'stress_scenario_volatility'
         elif scenario_type == "Add Gaussian Noise":
-            new_noise_std_dev = st.number_input("Noise Standard Deviation", min_value=0.0, max_value=5.0, value=0.5, step=0.1)
-            new_scenario_params = {'noise_std_dev': new_noise_std_dev, 'vol_cols': new_vol_cols}
+            new_noise_std_dev = st.number_input(
+                "Noise Standard Deviation", min_value=0.0, max_value=5.0, value=0.5, step=0.1)
+            new_scenario_params = {
+                'noise_std_dev': new_noise_std_dev, 'vol_cols': new_vol_cols}
             new_scenario_func_name = 'stress_scenario_add_noise'
 
         if st.button("Add Scenario to List"):
             if new_scenario_name in st.session_state.scenarios:
-                st.warning(f"Scenario '{new_scenario_name}' already exists. Please choose a different name.")
+                st.warning(
+                    f"Scenario '{new_scenario_name}' already exists. Please choose a different name.")
             elif not new_scenario_name:
                 st.warning("Scenario name cannot be empty.")
             else:
@@ -210,6 +238,6 @@ Pandas DataFrame, the DataFrame with specified columns having added random Gauss
                     'params': new_scenario_params
                 }
                 st.success(f"Scenario '{new_scenario_name}' added!")
-                st.experimental_rerun() # Rerun to update the displayed scenarios immediately
+                st.rerun()  # Rerun to update the displayed scenarios immediately
 
     st.markdown("We've defined three distinct scenarios: a general 'vol_up' shock across all designated volatility columns, a 'vol_down' shock, and a targeted 'single_col_spike' affecting only the `MedInc` (Median Income) column. These scenarios simulate different types of potential real-world events that could impact the model's inputs.")

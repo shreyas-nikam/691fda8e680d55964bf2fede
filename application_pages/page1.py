@@ -6,20 +6,25 @@ from sklearn.datasets import fetch_california_housing
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 
+
 @st.cache_resource
 def load_and_prepare_data():
     housing = fetch_california_housing()
     X = pd.DataFrame(housing.data, columns=housing.feature_names)
     y = pd.Series(housing.target)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
-    vol_cols = ['MedInc', 'HouseAge', 'AveRooms', 'AveBedrms', 'Population', 'AveOccup']
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.3, random_state=42)
+    vol_cols = ['MedInc', 'HouseAge', 'AveRooms',
+                'AveBedrms', 'Population', 'AveOccup']
     return X_train, X_test, y_train, y_test, vol_cols
+
 
 @st.cache_resource
 def train_model(X_train, y_train):
     model = LinearRegression()
     model.fit(X_train, y_train)
     return model
+
 
 def run_page1():
     st.title("Application Overview & Setup")
@@ -53,7 +58,7 @@ def run_page1():
     if 'X_test' not in st.session_state:
         with st.spinner("Loading and preparing data..."):
             st.session_state.X_train, st.session_state.X_test, st.session_state.y_train, \
-            st.session_state.y_test, st.session_state.vol_cols = load_and_prepare_data()
+                st.session_state.y_test, st.session_state.vol_cols = load_and_prepare_data()
         st.success("California Housing Dataset loaded!")
 
     X_test = st.session_state.X_test
@@ -63,7 +68,8 @@ def run_page1():
     st.write("First 5 rows of X_test:")
     st.dataframe(X_test.head())
     st.write("First 5 rows of y_test:")
-    st.dataframe(st.session_state.y_test.head()) # Use st.session_state.y_test directly
+    # Use st.session_state.y_test directly
+    st.dataframe(st.session_state.y_test.head())
     st.write("Volatility Columns:")
     st.write(vol_cols)
 
@@ -78,7 +84,8 @@ def run_page1():
 
     if 'model' not in st.session_state:
         with st.spinner("Training model..."):
-            st.session_state.model = train_model(st.session_state.X_train, st.session_state.y_train)
+            st.session_state.model = train_model(
+                st.session_state.X_train, st.session_state.y_train)
         st.success("Model trained successfully!")
     # model = st.session_state.model # Not strictly needed for display here
 

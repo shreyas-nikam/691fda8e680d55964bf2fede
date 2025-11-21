@@ -377,7 +377,7 @@ def run_page2():
                     'params': new_scenario_params
                 }
                 st.success(f"Scenario '{new_scenario_name}' added!")
-                st.experimental_rerun() # Rerun to update the displayed scenarios immediately
+                st.rerun() # Rerun to update the displayed scenarios immediately
 ```
 
 ## 6. Executing Robustness Tests
@@ -446,7 +446,7 @@ def run_page3():
         with st.spinner("Running scenarios and generating predictions..."):
             st.session_state.stressed_predictions = execute_scenarios(model, X_test, scenarios_dict)
         st.success("Robustness test completed!")
-        st.experimental_rerun() # Rerun to display results immediately
+        st.rerun() # Rerun to display results immediately
 ```
 
 <aside class="positive">
